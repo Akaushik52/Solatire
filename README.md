@@ -37,13 +37,16 @@ It features drag-and-drop mechanics, realistic pile behavior, and smooth visuals
    ```bash
    git clone https://github.com/<your-username>/solitaire-pygame.git
    cd solitaire-pygame
-2. Install dependencies
-  pip install pygame
+2. **Install dependencies**
+   ```bash
+   pip install pygame
+3. **Run the game**
+   ```bash
+   python main.py
 
-3. Run the game
-  python main.py
+---
 
-🗂️ Folder Structure
+## 🗂️ Folder Structure
   📁 solitaire-pygame
    ┣ 📂 assets/
    ┃ ┣ 📂 cards/
@@ -54,18 +57,24 @@ It features drag-and-drop mechanics, realistic pile behavior, and smooth visuals
    ┣ 📜 main.py
    ┗ 📜 README.md
 
-🏆 How to Play
-  Click on the stock pile to draw cards to the waste pile.
-  Drag cards between tableau columns following alternating color and descending order.
-  Place cards on foundations from Ace → King (same suit).
-  Empty tableau? Only Kings can be placed there.
-  Once all cards reach the foundations — you win! 🎉
-  Press R to restart the game after winning.
+---
 
-💡 Future Enhancements
-  🧮 Add score tracking and move counter
-  🔙 Implement undo functionality
-  🔊 Add sound effects and animations
-  💻 Add a main menu and settings options
+## 🏆 How to Play
+   - Click on the stock pile to draw cards to the waste pile.
+   - Drag cards between tableau columns following alternating color and descending order.
+   - Place cards on foundations from Ace → King (same suit).
+   - Empty tableau? Only Kings can be placed there.
+   - Once all cards reach the foundations — you win! 🎉
+   - Press R to restart the game after winning.
+
+---
+
+## 💡 Future Enhancements
+   - 🧮 Add score tracking and move counter
+   - 🔙 Implement undo functionality
+   - 🔊 Add sound effects and animations
+   - 💻 Add a main menu and settings options
+
+---
 
 Built with ❤️ using Python and Pygame
