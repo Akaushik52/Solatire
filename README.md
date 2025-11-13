@@ -35,7 +35,7 @@ It features drag-and-drop mechanics, realistic pile behavior, and smooth visuals
 
 1. **Clone this repository**
    ```bash
-   git clone https://github.com/<your-username>/solitaire-pygame.git
+   git clone https://github.com/Akaushik52/solitaire.git
    cd solitaire-pygame
 2. **Install dependencies**
    ```bash
