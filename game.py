@@ -7,32 +7,30 @@ class SolitaireGame:
     def __init__(self, screen):
         self.screen = screen
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont('arial', 18)
         self.card_images = {}
         self.card_back = None
         self.bg = None
-        self.won = None
         self.reset_stock = None
+        self.win_img = None
         self.load_assets()
         self.stock = Pile(STOCK_POS)
         self.waste = Pile(WASTE_POS)
         self.foundations = [Pile((FOUNDATION_X[i], FOUNDATION_Y)) for i in range(4)]
         self.tableau = [Pile((TABLEAU_X[i], TABLEAU_Y)) for i in range(7)]
-        self.undo_stack = []
-        self.score = 0
-        self.moves = 0
-        self.dragging = None
+        self.dragging = []
+        self.dragging_from = None
         self.create_new_game()
+        self.won = False
 
     def load_assets(self):
         bg_img = pygame.image.load("assets/bg.jpg")
         self.bg = pygame.transform.smoothscale(bg_img, (SCREEN_W,SCREEN_H))
         
         won_img = pygame.image.load("assets/won.png")
-        self.won = pygame.transform.smoothscale(won_img, (SCREEN_W,SCREEN_H))
+        self.win_img = pygame.transform.smoothscale(won_img, (SCREEN_W,SCREEN_H))
 
         reset_img = pygame.image.load("assets/reset.png")
-        self.reset_stock = pygame.transform.smoothscale(reset_img, (CARD_WIDTH,CARD_HEIGHT-40))
+        self.reset_stock = pygame.transform.smoothscale(reset_img, (CARD_WIDTH,CARD_HEIGHT))
 
         back_image = pygame.image.load('assets/card_back.png')
         self.card_back = pygame.transform.smoothscale(back_image, (CARD_WIDTH,CARD_HEIGHT))
@@ -40,9 +38,7 @@ class SolitaireGame:
         for s in SUITS:
             for r in RANKS:
                 card_image = pygame.image.load(f"assets/cards/{r}{s}.png")
-                temp = card_image.convert_alpha()
-                temp = pygame.transform.smoothscale(temp, (CARD_WIDTH, CARD_HEIGHT))
-                self.card_images[f"{r}{s}"] = temp
+                self.card_images[f"{r}{s}"] = pygame.transform.smoothscale(card_image, (CARD_WIDTH, CARD_HEIGHT))
 
     def create_deck(self):
         deck = []
@@ -101,56 +97,57 @@ class SolitaireGame:
                 pos = pygame.mouse.get_pos()
                 x, y = pos[0] - 50 , pos[1] + i*20 -70
                 card.draw(self.screen, (x, y))
-
-        if self.win():
-            self.screen.blit(self.won,(0,0))
+            
+        if self.won:
+            self.screen.blit(self.win_img, (0,0))
 
         pygame.display.flip()
 
     def win(self):
         for pile in self.tableau:
             for card in pile.cards:
-                if card.face_up != False:
-                    return False
-        return True
+                if not card.face_up:
+                    self.won = False
+                    return None
+        self.won = True
 
     def run(self):
         running = True
-        dragging_cards = []
-        dragging_from = None
         
         while running:
+            self.win()
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     running = False
+                
+                if self.won:
+                    if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+                        mx, my = e.pos
+                        if 310 < mx < 690 and 490 < my < 620:
+                            self.create_new_game()
+                            self.won = False
 
-                if e.type == pygame.KEYDOWN and self.win():
-                    self.create_new_game()
-
-                elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+                if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
                     mx, my = e.pos
                     for pile in reversed(self.tableau):
                         for i, card in enumerate(pile.cards):
                             if card.face_up and card.rect.collidepoint(mx, my):
-                                dragging_cards = pile.remove_from(i)
-                                dragging_from = pile
+                                self.dragging = pile.remove_from(i)
+                                self.dragging_from = pile
                                 break
-                        if dragging_cards:
-                            self.dragging = dragging_cards
-                            break
 
-                    if not dragging_cards and self.waste.top() and self.waste.top().rect.collidepoint(mx, my):
+                    if not self.dragging and self.waste.top() and self.waste.top().rect.collidepoint(mx, my):
                         card = self.waste.cards.pop()
-                        dragging_cards = [card]
-                        dragging_from = self.waste
+                        self.dragging = [card]
+                        self.dragging_from = self.waste
                     
-                    if not dragging_cards and self.stock.top() and self.stock.top().rect.collidepoint(mx, my):
+                    if not self.dragging and self.stock.top() and self.stock.top().rect.collidepoint(mx, my):
                         card = self.stock.top()
                         self.stock.cards.pop()
                         card.face_up = True
                         self.waste.add(card)
 
-                    elif not dragging_cards and not self.stock.cards:
+                    elif not self.dragging and not self.stock.cards:
                         stock_rect = pygame.Rect(self.stock.pos, (CARD_WIDTH, CARD_HEIGHT))
                         if stock_rect.collidepoint(mx, my):
                             while self.waste.cards:
@@ -158,48 +155,42 @@ class SolitaireGame:
                                 c.face_up = False
                                 self.stock.add(c)
 
-                    if dragging_cards:
-                        self.dragging = dragging_cards
-                        break
-
-                elif e.type == pygame.MOUSEBUTTONUP and e.button == 1 and dragging_cards:
+                elif e.type == pygame.MOUSEBUTTONUP and e.button == 1 and self.dragging:
                     mx, my = e.pos
                     dropped = False
-                    self.dragging = []
 
                     for pile in self.tableau:
                         if pile.cards:
                             target = pile.cards[-1]
-                            if target.rect.collidepoint(mx, my) and self.can_place_on_tableau(dragging_cards[0], target):
-                                pile.add(dragging_cards)
+                            if target.rect.collidepoint(mx, my) and self.can_place_on_tableau(self.dragging[0], target):
+                                pile.add(self.dragging)
                                 dropped = True
                                 break
                         else:
                             rect = pygame.Rect(pile.pos, (CARD_WIDTH, CARD_HEIGHT))
-                            if rect.collidepoint(mx, my) and self.can_place_on_tableau(dragging_cards[0], None):
-                                pile.add(dragging_cards)
+                            if rect.collidepoint(mx, my) and self.can_place_on_tableau(self.dragging[0], None):
+                                pile.add(self.dragging)
                                 dropped = True
                                 break
                    
                     if not dropped:
                         for pile in self.foundations:
                             rect = pygame.Rect(pile.pos, (CARD_WIDTH, CARD_HEIGHT))
-                            if rect.collidepoint(mx, my) and self.can_place_on_foundation(dragging_cards[0], pile):
-                                pile.add(dragging_cards)
+                            if rect.collidepoint(mx, my) and self.can_place_on_foundation(self.dragging[0], pile):
+                                pile.add(self.dragging)
                                 dropped = True
                                 break
 
-                    if not dropped and dragging_from:
-                        dragging_from.add(dragging_cards)
+                    if not dropped and self.dragging_from:
+                        self.dragging_from.add(self.dragging)
 
-                    if dragging_from and dragging_from.cards:
-                        dragging_from.cards[-1].face_up = True
+                    if self.dragging_from and self.dragging_from.cards:
+                        self.dragging_from.cards[-1].face_up = True
 
-                    dragging_cards = []
-                    dragging_from = None
-            
+                    self.dragging = []
+                    self.dragging_from = None
+
             self.draw()
-            self.win()
-            
+            self.clock.tick(FPS)
+           
         pygame.quit()
-
