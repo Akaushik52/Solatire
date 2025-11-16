@@ -94,8 +94,8 @@ class SolitaireGame:
 
         if self.dragging:
             for i, card in enumerate(self.dragging):
-                pos = pygame.mouse.get_pos()
-                x, y = pos[0] - 50 , pos[1] + i*20 -70
+                mx, my = pygame.mouse.get_pos()
+                x, y = mx - 50 , my + i*20 -70
                 card.draw(self.screen, (x, y))
             
         if self.won:
@@ -123,7 +123,8 @@ class SolitaireGame:
                 if self.won:
                     if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
                         mx, my = e.pos
-                        if 310 < mx < 690 and 490 < my < 620:
+                        new_game_rect = pygame.Rect((310, 490), (380, 130))
+                        if new_game_rect.collidepoint(mx, my):
                             self.create_new_game()
                             self.won = False
 
@@ -161,7 +162,7 @@ class SolitaireGame:
 
                     for pile in self.tableau:
                         if pile.cards:
-                            target = pile.cards[-1]
+                            target = pile.top()
                             if target.rect.collidepoint(mx, my) and self.can_place_on_tableau(self.dragging[0], target):
                                 pile.add(self.dragging)
                                 dropped = True
@@ -173,24 +174,21 @@ class SolitaireGame:
                                 dropped = True
                                 break
                    
-                    if not dropped:
-                        for pile in self.foundations:
-                            rect = pygame.Rect(pile.pos, (CARD_WIDTH, CARD_HEIGHT))
-                            if rect.collidepoint(mx, my) and self.can_place_on_foundation(self.dragging[0], pile):
-                                pile.add(self.dragging)
-                                dropped = True
-                                break
+                    for pile in self.foundations:
+                        rect = pygame.Rect(pile.pos, (CARD_WIDTH, CARD_HEIGHT))
+                        if rect.collidepoint(mx, my) and self.can_place_on_foundation(self.dragging[0], pile):
+                            pile.add(self.dragging)
+                            dropped = True
+                            break
 
                     if not dropped and self.dragging_from:
                         self.dragging_from.add(self.dragging)
 
                     if self.dragging_from and self.dragging_from.cards:
-                        self.dragging_from.cards[-1].face_up = True
+                        self.dragging_from.top().face_up = True
 
                     self.dragging = []
                     self.dragging_from = None
 
             self.draw()
             self.clock.tick(FPS)
-           
-        pygame.quit()
