@@ -84,7 +84,7 @@ class SolitaireGame:
         if self.stock.top():
             self.stock.top().draw(self.screen, self.stock.pos)
         else:
-            self.screen.blit(self.reset_stock, (self.stock.pos[0], self.stock.pos[1]))
+            self.screen.blit(self.reset_stock, self.stock.pos)
             
         if self.waste.top():
             self.waste.top().draw(self.screen, self.waste.pos)
